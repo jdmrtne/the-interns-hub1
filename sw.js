@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════
-//  THE INTERNS HUB — SERVICE WORKER v2.0
+//  THE INTERNS HUB — SERVICE WORKER v3.0
 // ═══════════════════════════════════════════
-const CACHE_NAME = 'interns-hub-v2';
+const CACHE_NAME = 'interns-hub-v3';
 const STATIC_ASSETS = [
   '/the-interns-hub1/',
   '/the-interns-hub1/index.html',
@@ -11,6 +11,7 @@ const STATIC_ASSETS = [
   '/the-interns-hub1/announcements.html',
   '/the-interns-hub1/admin.html',
   '/the-interns-hub1/chat.html',
+  '/the-interns-hub1/notifications.js',
   '/the-interns-hub1/config.js',
   '/the-interns-hub1/style.css',
   '/the-interns-hub1/manifest.json',
