@@ -388,6 +388,9 @@ tr:hover td{background:rgba(255,255,255,.018);}
   .main-content-wrap { margin-left: 0; }
   .mob-header { display: flex; }
   .app-header { display: none; }
+@media(max-width:680px){
+  .total-banner { display: none; }
+}
 }
 
 
@@ -498,25 +501,6 @@ tr:hover td{background:rgba(255,255,255,.018);}
   </div>
 </nav>
 <div class="main-content-wrap">
-<header class="app-header">
-  <div class="brand"><h1>THE INTERNS HUB</h1><sub>v5.0</sub></div>
-  <nav class="hdr-platform-nav" id="platformNav" style="display:none">
-    <a href="dashboard.html" class="hdr-nav-link">Hub</a>
-    <a href="interns.html" class="hdr-nav-link">Interns</a>
-    <a href="messages.html" class="hdr-nav-link">Messages</a>
-    <a href="announcements.html" class="hdr-nav-link">Board</a>
-    <a href="admin.html" class="hdr-nav-link hdr-nav-admin" id="adminNavLink" style="display:none">Admin</a>
-  </nav>
-  <div class="hdr-right">
-    <div class="dot" id="connDot"></div>
-    <span class="offline-badge" id="offlineBadge">OFFLINE</span>
-    <span id="headerStatus">READY</span>
-    <div class="hdr-user">
-      <span class="hdr-username" id="hdrUsername"></span>
-      <button class="btn-logout" onclick="doLogout()">LOGOUT</button>
-    </div>
-  </div>
-</header>
 
 <div class="toasts" id="toasts"></div>
 
@@ -845,24 +829,14 @@ async function onSignedIn(user){
   currentUser=user;
   displayName=user.user_metadata?.display_name||user.email.split('@')[0];
   document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('hdrUsername').textContent=displayName;
   document.getElementById('empName').value=displayName;
-  // Show platform nav
-  const pNav=document.getElementById('platformNav');
-  if(pNav) pNav.style.display='flex';
-  // Check admin
-  try{
-    const{data:profile}=await sb.from('users').select('role').eq('id',user.id).single();
-    if(profile?.role==='admin'){const al=document.getElementById('adminNavLink');if(al)al.style.display='inline-block';}
-  }catch(e){}
   // Setup sidebar nav
   try {
-    const{data:prof}=await sb.from('users').select('role,name').eq('id',user.id).single();
+    const{data:prof}=await sb.from('users').select('role,name').eq('id',user.id).single();\
     const role=prof?.role||'intern';
     const isAdm=role==='admin';
     renderSideNav(isAdm);
     setupSidebarUser(displayName, role);
-    if(isAdm){const al=document.getElementById('adminNavLink');if(al)al.style.display='inline-block';}
   } catch(e){ renderSideNav(false); setupSidebarUser(displayName,'intern'); }
   showLoading('Loading your records…');
   await loadUserData();
@@ -887,7 +861,6 @@ function resetAppUI(){
   ['hAm','hPm','hTotal'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
   document.getElementById('grandTotal').textContent='0h 0m';
   document.getElementById('grandSub').textContent='0 days logged';
-  document.getElementById('hdrUsername').textContent='';
   document.getElementById('empName').value='';
   const tb=document.getElementById('tblBody'); if(tb)tb.innerHTML='';
   const cl=document.getElementById('cardList'); if(cl)cl.innerHTML='';
@@ -1047,7 +1020,7 @@ function updateUI(){
   const S=['READY','AWAITING AM IN','CLOCKED IN — AM','AWAITING PM IN','CLOCKED IN — PM','DAY COMPLETE ✓'];
   const r2=getTodayRec(); let si=0;
   if(r2){si=!r2.am_in?1:!r2.am_out?2:!r2.pm_in?3:!r2.pm_out?4:5;}
-  document.getElementById('headerStatus').textContent=S[si];
+  const hs=document.getElementById('headerStatus'); if(hs) hs.textContent=S[si];
 }
 function updateTotals(){
   let grand=0,cnt=0;
