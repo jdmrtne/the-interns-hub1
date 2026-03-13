@@ -247,11 +247,16 @@ async function sendMessage(){
   if(error){toast('Failed to send','err');inp.value=text;}
   inp.focus();
 }
+const msgAudio=new Audio('./notification.mp3');
+function playMsgSound(){try{msgAudio.currentTime=0;msgAudio.play().catch(()=>{});}catch(e){}}
 function setupRealtime(){
   rtChannel=sb.channel('chat-'+[currentUser.id,partnerUser.id].sort().join('-'))
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},payload=>{
       const m=payload.new;
-      if((m.sender_id===currentUser.id&&m.receiver_id===partnerUser.id)||(m.sender_id===partnerUser.id&&m.receiver_id===currentUser.id))renderMsg(m,true);
+      if((m.sender_id===currentUser.id&&m.receiver_id===partnerUser.id)||(m.sender_id===partnerUser.id&&m.receiver_id===currentUser.id)){
+        renderMsg(m,true);
+        if(m.sender_id!==currentUser.id)playMsgSound();
+      }
     }).subscribe();
 }
 async function boot(){

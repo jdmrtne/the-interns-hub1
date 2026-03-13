@@ -249,7 +249,7 @@ function avatarColor(n){const c=['#38bdf8','#58a6ff','#3fb950','#a371f7','#f8514
 function toast(msg,type='inf'){let c=document.getElementById('toasts');if(!c){c=document.createElement('div');c.id='toasts';c.className='toasts';document.body.appendChild(c);}const d=document.createElement('div');d.className='toast '+type;d.textContent=msg;c.appendChild(d);setTimeout(()=>d.remove(),3100);}
 // ─── Nav Icons (Lucide SVG) ───────────────────────────────────────────────────
 const NAV_ICONS = {
-  clock:     `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  logs:      `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
   dashboard: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>`,
   interns:   `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   messages:  `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
@@ -258,12 +258,12 @@ const NAV_ICONS = {
 };
 function renderNav(active){
   const links=[
-    {href:'index.html',       icon:NAV_ICONS.clock,     label:'Clock',     key:'clock'},
-    {href:'dashboard.html',   icon:NAV_ICONS.dashboard, label:'Dashboard', key:'dashboard'},
-    {href:'interns.html',     icon:NAV_ICONS.interns,   label:'Interns',   key:'interns'},
-    {href:'messages.html',    icon:NAV_ICONS.messages,  label:'Messages',  key:'messages'},
-    {href:'announcements.html',icon:NAV_ICONS.board,    label:'Board',     key:'announcements'},
-    {href:'admin.html',       icon:NAV_ICONS.admin,     label:'Admin',     key:'admin',adminOnly:true},
+    {href:'daily-logs.html',   icon:NAV_ICONS.logs,      label:'Daily Logs', key:'logs',     adminOnly:true},
+    {href:'dashboard.html',    icon:NAV_ICONS.dashboard,  label:'Dashboard',  key:'dashboard'},
+    {href:'interns.html',      icon:NAV_ICONS.interns,    label:'Interns',    key:'interns'},
+    {href:'messages.html',     icon:NAV_ICONS.messages,   label:'Messages',   key:'messages'},
+    {href:'announcements.html',icon:NAV_ICONS.board,      label:'Board',      key:'announcements'},
+    {href:'admin.html',        icon:NAV_ICONS.admin,      label:'Admin',      key:'admin',    adminOnly:true},
   ];
   return links.map(n=>`<a href="${n.href}" class="snav-item${active===n.key?' active':''}${n.adminOnly?' admin-only':''}" data-key="${n.key}"><span class="snav-icon">${n.icon}</span><span class="snav-label">${n.label}</span></a>`).join('');
 }
