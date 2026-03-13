@@ -177,6 +177,8 @@ window.HubMsgPoller = {
           filter: 'receiver_id=eq.' + userId
         }, async (payload) => {
           const msg = payload.new;
+          // Update _lastTs so the polling fallback doesn't re-show the same notification
+          if (msg.created_at && msg.created_at > this._lastTs) this._lastTs = msg.created_at;
           const { data: sender } = await sb.from('users').select('name').eq('id', msg.sender_id).single();
           HubNotif.showMessage(sender?.name || 'Someone', msg.message, msg.sender_id);
           if (typeof loadMessages === 'function') loadMessages();
