@@ -131,57 +131,47 @@ function timeAgo(ts) {
 
 // ─── Audio ───────────────────────────────────────────────
 let _audioCtx = null;
-let _audioUnlocked = false;
 let _audioBuffer = null;
+let _audioReady = false;         // true once mp3 is decoded
+let _audioLoadPromise = null;    // single shared load promise
 
-// Unlock audio on first user gesture (required by browsers)
-function _unlockAudio() {
-  if (_audioUnlocked) return;
-  _audioUnlocked = true;
-  try {
+function _getAudioCtx() {
+  if (!_audioCtx) {
     _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // Pre-load notification.mp3 if it exists
-    fetch('./notification.mp3')
-      .then(r => r.ok ? r.arrayBuffer() : Promise.reject())
-      .then(buf => _audioCtx.decodeAudioData(buf))
-      .then(decoded => { _audioBuffer = decoded; })
-      .catch(() => { /* will use synth beep */ });
-  } catch(e) {}
+  }
+  return _audioCtx;
 }
-['click','touchstart','keydown'].forEach(ev =>
-  document.addEventListener(ev, _unlockAudio, { once: true, passive: true })
-);
+
+// Start loading the mp3 immediately (doesn't need user gesture to fetch/decode)
+function _loadMp3() {
+  if (_audioLoadPromise) return _audioLoadPromise;
+  _audioLoadPromise = fetch('./notification.mp3')
+    .then(r => { if (!r.ok) throw new Error('not found'); return r.arrayBuffer(); })
+    .then(buf => _getAudioCtx().decodeAudioData(buf))
+    .then(decoded => { _audioBuffer = decoded; _audioReady = true; })
+    .catch(err => { console.warn('[HubNotif] notification.mp3 failed to load:', err); });
+  return _audioLoadPromise;
+}
+_loadMp3(); // kick off immediately on script load
 
 function _playNotifSound() {
+  if (!_audioReady || !_audioBuffer) return; // mp3 not ready yet, skip silently
   try {
-    if (!_audioCtx) {
-      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (_audioCtx.state === 'suspended') _audioCtx.resume();
-
-    if (_audioBuffer) {
-      // Play the mp3 file
-      const src = _audioCtx.createBufferSource();
-      src.buffer = _audioBuffer;
-      src.connect(_audioCtx.destination);
-      src.start(0);
-    } else {
-      // Fallback: synthesize a soft two-tone "ding"
-      const t = _audioCtx.currentTime;
-      const osc1 = _audioCtx.createOscillator();
-      const osc2 = _audioCtx.createOscillator();
-      const gain = _audioCtx.createGain();
-      osc1.type = 'sine'; osc1.frequency.setValueAtTime(880, t);
-      osc2.type = 'sine'; osc2.frequency.setValueAtTime(1100, t + 0.1);
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.3, t + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
-      osc1.connect(gain); osc2.connect(gain); gain.connect(_audioCtx.destination);
-      osc1.start(t); osc1.stop(t + 0.15);
-      osc2.start(t + 0.1); osc2.stop(t + 0.5);
-    }
-  } catch(e) { /* audio not available */ }
+    const ctx = _getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    const src = ctx.createBufferSource();
+    src.buffer = _audioBuffer;
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch(e) { /* ignore */ }
 }
+
+// Unlock suspended AudioContext on first user gesture
+['click','touchstart','keydown'].forEach(ev =>
+  document.addEventListener(ev, () => {
+    if (_audioCtx && _audioCtx.state === 'suspended') _audioCtx.resume();
+  }, { passive: true })
+);
 
 // ─── Floating toast ─────────────────────────────────────
 window.HubNotif = {
