@@ -706,21 +706,8 @@ async function boot(){
   // ── Announcement modal on login ──────────────────────
   await HubAnnouncements.checkOnLogin(sb, currentUser.id);
 
-  // ── Realtime: floating notification for new messages ─
-  sb.channel('dashboard-msgs')
-    .on('postgres_changes', {
-      event: 'INSERT', schema: 'public', table: 'messages',
-      filter: `receiver_id=eq.${currentUser.id}`
-    }, async (payload) => {
-      const msg = payload.new;
-      // Fetch sender name
-      const { data: sender } = await sb.from('users').select('name').eq('id', msg.sender_id).single();
-      const name = sender?.name || 'Someone';
-      HubNotif.showMessage(name, msg.message, msg.sender_id);
-      // Refresh message preview list
-      await loadMessages();
-    })
-    .subscribe();
+  // ── Poll for new messages every 10s ─────────────────
+  HubMsgPoller.start(sb, currentUser.id);
 }
 boot();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});

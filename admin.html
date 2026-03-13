@@ -91,7 +91,34 @@ tr:hover td{background:rgba(255,255,255,.018);}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;}
 .stat-label{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;}
 .stat-value{font-family:var(--display);font-size:32px;letter-spacing:.05em;color:var(--primary);line-height:1;}
-@media(max-width:768px){.sidebar-nav{transform:translateX(-100%);transition:transform .25s;}.sidebar-nav.open{transform:translateX(0);}.sidebar-overlay.show{display:block;}.main-content{margin-left:0;}.mob-header{display:flex;}.page-body{padding:20px 16px;}.page-header{padding:16px;}.page-title{font-size:22px;}}
+@media(max-width:768px){
+  .sidebar-nav{transform:translateX(-100%);transition:transform .25s;}
+  .sidebar-nav.open{transform:translateX(0);}
+  .sidebar-overlay.show{display:block;}
+  .main-content{margin-left:0;}
+  .mob-header{display:flex;}
+  .page-body{padding:16px;}
+  .page-header{padding:16px;}
+  .page-title{font-size:22px;}
+  .platform-layout{flex-direction:column;}
+  /* Stats grid: 2 columns on mobile */
+  .stat-grid{grid-template-columns:1fr 1fr !important;}
+  /* Admin tabs: wrap and shrink */
+  .admin-tabs{gap:3px;padding:3px;}
+  .admin-tab{min-width:0;padding:8px 10px;font-size:9px;flex:1;}
+  /* Tables: horizontal scroll */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .tbl-scroll{min-width:600px;}
+  /* Announcements tab: stack vertically */
+  #tab-announcements > div{grid-template-columns:1fr !important;gap:16px;}
+  /* Filter rows: stack */
+  .filter-row{gap:8px;}
+  .filter-row .fi{min-width:0;width:100%;}
+  /* Action buttons: keep small */
+  .act-btn{padding:3px 7px;font-size:7px;}
+  /* Page header row */
+  .page-header{flex-wrap:wrap;gap:10px;}
+}
 
 .admin-tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:24px;flex-wrap:wrap;}
 .admin-tab{flex:1;min-width:100px;padding:9px 16px;background:none;border:none;border-radius:7px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);cursor:pointer;transition:all .2s;white-space:nowrap;}
@@ -298,17 +325,8 @@ async function boot(){
   await loadUsers();
   document.getElementById('loadingOverlay').classList.add('hidden');
 
-  // ── Realtime: floating notification for new messages ─
-  sb.channel('admin-page-msgs')
-    .on('postgres_changes', {
-      event: 'INSERT', schema: 'public', table: 'messages',
-      filter: `receiver_id=eq.${currentUser.id}`
-    }, async (payload) => {
-      const msg = payload.new;
-      const { data: sender } = await sb.from('users').select('name').eq('id', msg.sender_id).single();
-      HubNotif.showMessage(sender?.name || 'Someone', msg.message, msg.sender_id);
-    })
-    .subscribe();
+  // ── Poll for new messages every 10s ─────────────────
+  HubMsgPoller.start(sb, currentUser.id);
 }
 boot();
 </script>

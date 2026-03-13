@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════
 //  THE INTERN HUB — Global Notification System
-//  Handles: floating message toasts + announcement modal
+//  Messages: polling every 10s (no realtime setup needed)
+//  Announcements: modal on login, remembered via localStorage
 // ═══════════════════════════════════════════════════════
 
 (function() {
@@ -123,9 +124,7 @@ style.textContent = `
   font-size: 9px; color: #38bdf8;
   letter-spacing: .1em; margin-bottom: 8px;
 }
-.ann-modal-dots {
-  display: flex; gap: 6px; margin-bottom: 24px;
-}
+.ann-modal-dots { display: flex; gap: 6px; margin-bottom: 24px; }
 .ann-modal-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: #21262d; cursor: pointer; transition: background .2s;
@@ -141,9 +140,7 @@ style.textContent = `
 }
 .ann-modal-btn.primary { background: #a371f7; color: #000; font-weight: 700; }
 .ann-modal-btn.primary:hover { background: #b48ffb; }
-.ann-modal-btn.ghost {
-  background: none; border: 1px solid #30363d; color: #7d8590;
-}
+.ann-modal-btn.ghost { background: none; border: 1px solid #30363d; color: #7d8590; }
 .ann-modal-btn.ghost:hover { border-color: #a371f7; color: #a371f7; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @media(max-width:480px){
@@ -177,7 +174,8 @@ function avatarInitials(name='') {
   return name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase() || '?';
 }
 function timeAgo(ts) {
-  const diff = Date.now() - new Date(ts.endsWith('Z') ? ts : ts + 'Z').getTime();
+  const s = ts.endsWith('Z') || ts.includes('+') ? ts : ts + 'Z';
+  const diff = Date.now() - new Date(s).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'just now';
   if (mins < 60) return mins + 'm ago';
@@ -211,29 +209,83 @@ window.HubNotif = {
   }
 };
 
+// ─── Message Polling ─────────────────────────────────────
+// Polls every 10 seconds — works without enabling realtime on the table
+window.HubMsgPoller = {
+  _sb: null,
+  _userId: null,
+  _lastTs: null,
+  _timer: null,
+  _onChat: false, // suppress notifs on the chat page itself
+
+  start(sb, userId) {
+    this._sb = sb;
+    this._userId = userId;
+    this._lastTs = new Date().toISOString();
+    // Check if we're on chat page — don't show notifs there
+    this._onChat = window.location.pathname.includes('chat.html');
+    if (this._onChat) return;
+    this._timer = setInterval(() => this._poll(), 10000);
+  },
+
+  async _poll() {
+    if (!this._sb || !this._userId) return;
+    try {
+      const { data } = await this._sb
+        .from('messages')
+        .select('*, sender:sender_id(name)')
+        .eq('receiver_id', this._userId)
+        .gt('created_at', this._lastTs)
+        .order('created_at', { ascending: true });
+
+      if (!data || data.length === 0) return;
+      this._lastTs = data[data.length - 1].created_at;
+
+      // Group by sender — show one notif per sender
+      const bySender = {};
+      for (const m of data) {
+        bySender[m.sender_id] = { name: m.sender?.name || 'Someone', text: m.message, id: m.sender_id };
+      }
+      for (const s of Object.values(bySender)) {
+        HubNotif.showMessage(s.name, s.text, s.id);
+      }
+
+      // Refresh convos/messages if the page has that function
+      if (typeof loadMessages === 'function') loadMessages();
+      if (typeof loadConvos === 'function') loadConvos();
+    } catch(e) {
+      // Silently ignore polling errors
+    }
+  },
+
+  stop() {
+    if (this._timer) clearInterval(this._timer);
+  }
+};
+
 // ─── Announcement Modal ─────────────────────────────────
 window.HubAnnouncements = {
   _anns: [],
   _idx: 0,
 
   async checkOnLogin(sb, userId) {
-    // Fetch all announcements newest first
-    const { data } = await sb.from('announcements')
-      .select('*, users(name)')
-      .order('created_at', { ascending: false });
-    if (!data || data.length === 0) return;
+    try {
+      const { data } = await sb.from('announcements')
+        .select('*, users(name)')
+        .order('created_at', { ascending: false });
+      if (!data || data.length === 0) return;
 
-    // Get seen IDs from localStorage (per user)
-    const key = `ann_seen_${userId}`;
-    const seen = JSON.parse(localStorage.getItem(key) || '[]');
+      const key = `ann_seen_${userId}`;
+      const seen = JSON.parse(localStorage.getItem(key) || '[]');
+      const unseen = data.filter(a => !seen.includes(a.id));
+      if (unseen.length === 0) return;
 
-    // Filter to only unseen
-    const unseen = data.filter(a => !seen.includes(a.id));
-    if (unseen.length === 0) return;
-
-    this._anns = unseen;
-    this._idx = 0;
-    this._show(userId, key, seen);
+      this._anns = unseen;
+      this._idx = 0;
+      this._show(userId, key, seen);
+    } catch(e) {
+      // Silently ignore
+    }
   },
 
   _show(userId, key, seen) {
@@ -242,13 +294,16 @@ window.HubAnnouncements = {
     const total = this._anns.length;
     const isLast = this._idx === total - 1;
     const modal = document.getElementById('ann-modal');
-
     const dotsHtml = total > 1
       ? `<div class="ann-modal-multi">Announcement ${this._idx + 1} of ${total}</div>
          <div class="ann-modal-dots">${this._anns.map((_,i) =>
-           `<div class="ann-modal-dot${i===this._idx?' active':''}" onclick="HubAnnouncements._jump(${i},'${userId}','${key}',${JSON.stringify(seen)})"></div>`
+           `<span class="ann-modal-dot${i===this._idx?' active':''}"></span>`
          ).join('')}</div>`
       : '';
+
+    // Safely encode for inline onclick
+    const safeKey = key;
+    const safeSeen = JSON.stringify(seen);
 
     modal.innerHTML = `
       <div class="ann-modal-badge">📣 Announcement</div>
@@ -257,51 +312,40 @@ window.HubAnnouncements = {
       <div class="ann-modal-meta">${ann.users?.name || 'Admin'} · ${timeAgo(ann.created_at)}</div>
       ${dotsHtml}
       <div class="ann-modal-actions">
-        <button class="ann-modal-btn ghost" onclick="HubAnnouncements._dismissAll('${userId}','${key}',${JSON.stringify(seen)})">Dismiss All</button>
-        ${!isLast
-          ? `<button class="ann-modal-btn primary" onclick="HubAnnouncements._next('${userId}','${key}',${JSON.stringify(seen)})">Next →</button>`
-          : `<button class="ann-modal-btn primary" onclick="HubAnnouncements._dismissAll('${userId}','${key}',${JSON.stringify(seen)})">Got it ✓</button>`
-        }
+        <button class="ann-modal-btn ghost" id="annDismissBtn">Dismiss All</button>
+        <button class="ann-modal-btn primary" id="annNextBtn">${isLast ? 'Got it ✓' : 'Next →'}</button>
       </div>
     `;
+
+    document.getElementById('annDismissBtn').onclick = () => this._dismissAll(userId);
+    document.getElementById('annNextBtn').onclick = () => {
+      if (isLast) this._dismissAll(userId);
+      else { this._markCurrentSeen(userId); this._idx++; this._show(userId, key, this._getSeen(userId)); }
+    };
+
     document.getElementById('ann-modal-ov').classList.remove('hidden');
   },
 
-  _markCurrentSeen(userId, key, seen) {
+  _getSeen(userId) {
+    return JSON.parse(localStorage.getItem(`ann_seen_${userId}`) || '[]');
+  },
+
+  _markCurrentSeen(userId) {
     const ann = this._anns[this._idx];
-    if (ann && !seen.includes(ann.id)) {
-      seen = [...seen, ann.id];
-      localStorage.setItem(`ann_seen_${userId}`, JSON.stringify(seen));
+    if (!ann) return;
+    const key = `ann_seen_${userId}`;
+    const seen = this._getSeen(userId);
+    if (!seen.includes(ann.id)) {
+      localStorage.setItem(key, JSON.stringify([...seen, ann.id]));
     }
-    return seen;
   },
 
-  _next(userId, key, seen) {
-    seen = this._markCurrentSeen(userId, key, seen);
-    this._idx++;
-    this._show(userId, key, seen);
-  },
-
-  _jump(i, userId, key, seen) {
-    seen = this._markCurrentSeen(userId, key, seen);
-    this._idx = i;
-    this._show(userId, key, seen);
-  },
-
-  _dismissAll(userId, key, seen) {
-    // Mark ALL as seen
+  _dismissAll(userId) {
     const allIds = this._anns.map(a => a.id);
-    const merged = [...new Set([...seen, ...allIds])];
-    localStorage.setItem(`ann_seen_${userId}`, JSON.stringify(merged));
+    const seen = this._getSeen(userId);
+    localStorage.setItem(`ann_seen_${userId}`, JSON.stringify([...new Set([...seen, ...allIds])]));
     document.getElementById('ann-modal-ov').classList.add('hidden');
   }
 };
-
-// Click backdrop to dismiss
-document.getElementById('ann-modal-ov').addEventListener('click', function(e) {
-  if (e.target === this) {
-    // Don't dismiss on backdrop click — force user to acknowledge
-  }
-});
 
 })();
