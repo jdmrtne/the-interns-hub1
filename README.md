@@ -1,5 +1,7 @@
 # The Interns Hub
 
+![The Interns Hub](./og-image.png)
+
 A complete intern management platform — time clock, messaging, announcements, and admin tools.
 
 Built as a Progressive Web App (PWA), deployable via GitHub Pages, powered by Supabase.
@@ -170,16 +172,17 @@ npm run build
 
 ## Icon Library
 
-This project uses [Lucide Icons](https://lucide.dev) as inline SVG — no external dependency required.
+This project uses [Lucide Icons](https://lucide.dev) as inline SVG — no external dependency required. All nav icons use `stroke="#58a6ff"` (blue), brightening to `#93c5fd` on active and `#7dd3fc` on hover.
 
 | Icon | Usage |
 |---|---|
-| `clock` | Time Clock navigation, clock-in/out |
+| `clock` | Time Clock navigation |
 | `layout-dashboard` | Dashboard navigation |
-| `users` | Interns navigation, user profiles |
-| `mail` | Messages navigation |
-| `megaphone` | Announcements/Board navigation |
-| `settings` | Admin navigation |
+| `users` | Interns navigation |
+| `message-square` | Messages navigation (chat bubble) |
+| `send` | Announcements/Board navigation |
+| `star` | Admin navigation |
+| `calendar` | Daily Logs navigation (admin only) |
 | `log-out` | Logout button |
 | `log-in` | Login page submit |
 
