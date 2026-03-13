@@ -233,6 +233,9 @@ tr:hover td{background:rgba(255,255,255,.018);}
 <script>
 const SUPABASE_URL='https://ntbqdkfxcnditgdxdipb.supabase.co',SUPABASE_KEY='sb_publishable_2ybsFhQ7iCTysVxDri2G-A_afoYgATk';let sb,currentUser;
 function escHtml(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function toMins(t){if(!t)return null;const[h,m]=(t+':00').split(':').map(Number);return h*60+(m||0);}
+function calcLogHours(l){if(l.total_hours)return l.total_hours;let tot=0;const amIn=toMins(l.am_in),amOut=toMins(l.am_out),pmIn=toMins(l.pm_in),pmOut=toMins(l.pm_out);if(amIn!==null&&amOut!==null&&amOut>amIn)tot+=amOut-amIn;if(pmIn!==null&&pmOut!==null&&pmOut>pmIn)tot+=pmOut-pmIn;return tot>0?tot/60:null;}
+function fmtHours(h){if(h===null||h===undefined)return'—';return Math.floor(h)+'h '+String(Math.round((h%1)*60)).padStart(2,'0')+'m';}
 function timeAgo(ts){
   if(!ts)return'—';
   // Normalize to UTC: append Z if no timezone info present
@@ -293,7 +296,7 @@ function clearLogFilters(){document.getElementById('logSearch').value='';documen
 function renderLogs(list){
   const tb=document.getElementById('logTbody');
   if(!list.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:30px;font-family:var(--mono);font-size:11px">No logs found</td></tr>';return;}
-  tb.innerHTML=list.map(l=>{const h=l.total_hours?Math.floor(l.total_hours)+'h '+Math.round((l.total_hours%1)*60)+'m':'—';return`<tr><td style="color:var(--text)">${escHtml(l.users?.name||'—')}</td><td style="color:var(--text-muted)">${l.date||'—'}</td><td style="color:var(--blue)">${l.am_in||'—'}</td><td style="color:var(--blue)">${l.am_out||'—'}</td><td style="color:var(--primary)">${l.pm_in||'—'}</td><td style="color:var(--primary)">${l.pm_out||'—'}</td><td style="color:var(--green);font-weight:700">${h}</td></tr>`;}).join('');
+  tb.innerHTML=list.map(l=>{const h=fmtHours(calcLogHours(l));return`<tr><td style="color:var(--text)">${escHtml(l.users?.name||'—')}</td><td style="color:var(--text-muted)">${l.date||'—'}</td><td style="color:var(--blue)">${l.am_in||'—'}</td><td style="color:var(--blue)">${l.am_out||'—'}</td><td style="color:var(--primary)">${l.pm_in||'—'}</td><td style="color:var(--primary)">${l.pm_out||'—'}</td><td style="color:var(--green);font-weight:700">${h}</td></tr>`;}).join('');
 }
 /* Announcements */
 async function postAnn(){

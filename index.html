@@ -839,6 +839,7 @@ async function onSignedIn(user){
     const{data:prof}=await sb.from('users').select('role,name').eq('id',user.id).single();
     const role=prof?.role||'intern';
     const isAdm=role==='admin';
+    if(isAdm){ window.location.href='daily-logs.html'; return; }
     renderSideNav(isAdm);
     setupSidebarUser(displayName, role);
   } catch(e){ renderSideNav(false); setupSidebarUser(displayName,'intern'); }
@@ -1364,6 +1365,7 @@ function setupDesktop(){
 
 // ─── Sidebar nav ─────────────────────────────────────────────────────────────
 const SIDE_ICONS = {
+  logs: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
   clock: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><circle cx="12" cy="12" r="1" fill="#58a6ff"/></svg>`,
   dashboard: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>`,
   users: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 21v-1a6 6 0 0 1 6-6h0a6 6 0 0 1 6 6v1"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-1a4 4 0 0 0-3-3.85"/></svg>`,
@@ -1381,10 +1383,18 @@ function renderSideNav(isAdmin) {
   ];
   const el = document.getElementById('sideNavLinks');
   if(!el) return;
-  const clockGroup = `<div class="snav-group"><a href="index.html" class="snav-item active"><span class="snav-icon">${SIDE_ICONS.clock}</span><span class="snav-label">Clock</span></a><div class="snav-sub"><button class="snav-subitem active" id="navClock" onclick="gotoPage('clock')">⏱ Time Clock</button><button class="snav-subitem" id="navLog" onclick="gotoPage('log')">✏ Log Past Day</button><button class="snav-subitem" id="navHistory" onclick="gotoPage('history')">↺ History</button></div></div>`;
-  el.innerHTML = clockGroup + links.filter(l => !l.adminOnly || isAdmin).map(l =>
-    `<a href="${l.href}" class="snav-item"><span class="snav-icon">${l.icon}</span><span class="snav-label">${l.label}</span></a>`
-  ).join('');
+  if(isAdmin) {
+    // Admins see Daily Logs instead of Clock
+    const dailyLogsLink = `<a href="daily-logs.html" class="snav-item"><span class="snav-icon">${SIDE_ICONS.logs}</span><span class="snav-label">Daily Logs</span></a>`;
+    el.innerHTML = dailyLogsLink + links.filter(l => !l.adminOnly || isAdmin).map(l =>
+      `<a href="${l.href}" class="snav-item"><span class="snav-icon">${l.icon}</span><span class="snav-label">${l.label}</span></a>`
+    ).join('');
+  } else {
+    const clockGroup = `<div class="snav-group"><a href="index.html" class="snav-item active"><span class="snav-icon">${SIDE_ICONS.clock}</span><span class="snav-label">Clock</span></a><div class="snav-sub"><button class="snav-subitem active" id="navClock" onclick="gotoPage('clock')">⏱ Time Clock</button><button class="snav-subitem" id="navLog" onclick="gotoPage('log')">✏ Log Past Day</button><button class="snav-subitem" id="navHistory" onclick="gotoPage('history')">↺ History</button></div></div>`;
+    el.innerHTML = clockGroup + links.filter(l => !l.adminOnly || isAdmin).map(l =>
+      `<a href="${l.href}" class="snav-item"><span class="snav-icon">${l.icon}</span><span class="snav-label">${l.label}</span></a>`
+    ).join('');
+  }
 }
 function setupSidebarUser(name, role) {
   const nm = document.getElementById('sideNavName');

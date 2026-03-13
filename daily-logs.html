@@ -90,11 +90,28 @@ tr:hover td{background:rgba(255,255,255,.018);}
   .sidebar-overlay.show{display:block;}
   .main-content{margin-left:0;}
   .mob-header{display:flex;}
-  .page-body{padding:16px;}
-  .page-header{padding:14px 16px;flex-wrap:wrap;}
-  .page-title{font-size:22px;}
-  .stat-grid{grid-template-columns:1fr 1fr;}
-  .tbl-scroll{min-width:600px;}
+  .page-body{padding:12px;}
+  .page-header{padding:12px 14px;flex-wrap:wrap;gap:8px;}
+  .page-title{font-size:20px;}
+  .stat-grid{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .stat-card{padding:14px;}
+  .stat-value{font-size:24px;}
+  .filter-row{gap:8px;}
+  .filter-row .fi{font-size:13px;padding:9px 12px;}
+  .tbl-wrap{display:none;}
+  .mob-log-list{display:flex;flex-direction:column;gap:10px;}
+  .mob-log-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
+  .mob-log-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .mob-log-card-user{display:flex;align-items:center;gap:9px;}
+  .mob-log-card-name{font-family:var(--mono);font-size:12px;color:var(--text);}
+  .mob-log-card-total{font-family:var(--display);font-size:20px;color:var(--green);letter-spacing:.04em;}
+  .mob-log-card-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .mob-log-cell{background:var(--panel);border-radius:6px;padding:8px 10px;}
+  .mob-log-cell-lbl{font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;}
+  .mob-log-cell-val{font-family:var(--mono);font-size:12px;}
+}
+@media(min-width:769px){
+  .mob-log-list{display:none;}
 }
 .snav-icon{width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .snav-icon svg{width:18px;height:18px;display:block;}
@@ -148,6 +165,7 @@ tr:hover td{background:rgba(255,255,255,.018);}
           <tbody id="logsTbody"></tbody>
         </table>
       </div></div>
+      <div class="mob-log-list" id="mobLogList"></div>
     </div>
   </main>
 </div>
@@ -159,7 +177,9 @@ function escHtml(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'
 function avatarInitials(n){if(!n)return'?';return n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();}
 function avatarColor(n){const c=['#38bdf8','#58a6ff','#3fb950','#a371f7','#f85149','#79c0ff','#56d364','#d2a8ff'];let h=0;for(const ch of(n||''))h=ch.charCodeAt(0)+((h<<5)-h);return c[Math.abs(h)%c.length];}
 function toast(msg,type='inf'){let c=document.getElementById('toasts');const d=document.createElement('div');d.className='toast '+type;d.textContent=msg;c.appendChild(d);setTimeout(()=>d.remove(),3100);}
-function fmtHours(total_hours){if(total_hours===null||total_hours===undefined)return'—';const h=Math.floor(total_hours),m=Math.round((total_hours%1)*60);return h+'h '+m+'m';}
+function fmtHours(total_hours){if(total_hours===null||total_hours===undefined)return'—';const h=Math.floor(total_hours),m=Math.round((total_hours%1)*60);return h+'h '+String(m).padStart(2,'0')+'m';}
+function toMins(t){if(!t)return null;const[h,m]=(t+':00').split(':').map(Number);return h*60+(m||0);}
+function calcLogHours(l){if(l.total_hours)return l.total_hours;let tot=0;const amIn=toMins(l.am_in),amOut=toMins(l.am_out),pmIn=toMins(l.pm_in),pmOut=toMins(l.pm_out);if(amIn!==null&&amOut!==null&&amOut>amIn)tot+=amOut-amIn;if(pmIn!==null&&pmOut!==null&&pmOut>pmIn)tot+=pmOut-pmIn;return tot>0?tot/60:null;}
 function todayStr(){return new Date().toLocaleDateString('en-CA');}
 
 const NAV_ICONS={
@@ -193,16 +213,22 @@ function getStatus(log){
 
 function renderTable(users,logs){
   const tb=document.getElementById('logsTbody');
+  const mob=document.getElementById('mobLogList');
   const logMap={};
   logs.forEach(l=>{logMap[l.user_id]=l;});
   const search=document.getElementById('searchInput').value.toLowerCase().trim();
   const filtered=users.filter(u=>!search||(u.name||'').toLowerCase().includes(search));
-  if(!filtered.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:30px;font-family:var(--mono);font-size:11px">No interns found</td></tr>';return;}
+  if(!filtered.length){
+    tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:30px;font-family:var(--mono);font-size:11px">No interns found</td></tr>';
+    mob.innerHTML='<div style="text-align:center;color:var(--text-dim);padding:30px;font-family:var(--mono);font-size:11px">No interns found</div>';
+    return;
+  }
+  // Desktop table rows
   tb.innerHTML=filtered.map(u=>{
     const log=logMap[u.id];
     const col=avatarColor(u.name);
     const st=getStatus(log);
-    const total=log?fmtHours(log.total_hours):'—';
+    const total=log?fmtHours(calcLogHours(log)):'—';
     return`<tr>
       <td><div style="display:flex;align-items:center;gap:9px">
         <div class="avatar" style="background:${col}20;color:${col}">${avatarInitials(u.name)}</div>
@@ -216,6 +242,32 @@ function renderTable(users,logs){
       <td style="color:var(--green);font-weight:700">${total}</td>
     </tr>`;
   }).join('');
+  // Mobile cards
+  mob.innerHTML=filtered.map(u=>{
+    const log=logMap[u.id];
+    const col=avatarColor(u.name);
+    const st=getStatus(log);
+    const total=log?fmtHours(calcLogHours(log)):'—';
+    const statusColor=st.cls==='status-in'?'var(--green)':st.cls==='status-partial'?'var(--blue)':'var(--text-dim)';
+    return`<div class="mob-log-card">
+      <div class="mob-log-card-header">
+        <div class="mob-log-card-user">
+          <div class="avatar" style="background:${col}20;color:${col}">${avatarInitials(u.name)}</div>
+          <div>
+            <div class="mob-log-card-name">${escHtml(u.name||'—')}</div>
+            <div style="font-family:var(--mono);font-size:9px;color:${statusColor};letter-spacing:.08em;margin-top:2px"><span class="status-dot ${st.cls}"></span>${st.label}</div>
+          </div>
+        </div>
+        <div class="mob-log-card-total">${total}</div>
+      </div>
+      <div class="mob-log-card-grid">
+        <div class="mob-log-cell"><div class="mob-log-cell-lbl">AM In</div><div class="mob-log-cell-val" style="color:var(--blue)">${log?.am_in||'—'}</div></div>
+        <div class="mob-log-cell"><div class="mob-log-cell-lbl">AM Out</div><div class="mob-log-cell-val" style="color:var(--blue)">${log?.am_out||'—'}</div></div>
+        <div class="mob-log-cell"><div class="mob-log-cell-lbl">PM In</div><div class="mob-log-cell-val" style="color:var(--primary)">${log?.pm_in||'—'}</div></div>
+        <div class="mob-log-cell"><div class="mob-log-cell-lbl">PM Out</div><div class="mob-log-cell-val" style="color:var(--primary)">${log?.pm_out||'—'}</div></div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderStats(users,logs){
@@ -224,7 +276,7 @@ function renderStats(users,logs){
   const interns=users.filter(u=>u.role!=='admin');
   const present=interns.filter(u=>logMap[u.id]?.am_in||logMap[u.id]?.pm_in).length;
   const absent=interns.length-present;
-  const totalMins=logs.reduce((s,l)=>{if(!l.total_hours)return s;return s+Math.round(l.total_hours*60);},0);
+  const totalMins=logs.reduce((s,l)=>{const h=calcLogHours(l);if(!h)return s;return s+Math.round(h*60);},0);
   const th=Math.floor(totalMins/60),tm=totalMins%60;
   document.getElementById('statsRow').innerHTML=`
     <div class="stat-card"><div class="stat-label">Total Interns</div><div class="stat-value">${interns.length}</div></div>

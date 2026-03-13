@@ -201,7 +201,9 @@ function filterInterns(){
 }
 let isAdmin=false;
 function fmtMin(m){if(m===null||m===undefined)return'—';return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m';}
-function fmtHours(h){if(h===null||h===undefined)return'—';return Math.floor(h)+'h '+Math.round((h%1)*60)+'m';}
+function fmtHours(h){if(h===null||h===undefined)return'—';return Math.floor(h)+'h '+String(Math.round((h%1)*60)).padStart(2,'0')+'m';}
+function toMins(t){if(!t)return null;const[h,m]=(t+':00').split(':').map(Number);return h*60+(m||0);}
+function calcLogHours(l){if(l.total_hours)return l.total_hours;let tot=0;const amIn=toMins(l.am_in),amOut=toMins(l.am_out),pmIn=toMins(l.pm_in),pmOut=toMins(l.pm_out);if(amIn!==null&&amOut!==null&&amOut>amIn)tot+=amOut-amIn;if(pmIn!==null&&pmOut!==null&&pmOut>pmIn)tot+=pmOut-pmIn;return tot>0?tot/60:null;}
 function fmtDate(d){if(!d)return'—';return new Date(d+'T00:00:00').toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'});}
 
 function renderInterns(list){
@@ -234,8 +236,9 @@ async function openTimeModal(uid,name,dept){
     document.getElementById('modalStats').innerHTML='<div class="modal-stat"><div class="modal-stat-label">Days Logged</div><div class="modal-stat-value">0</div></div><div class="modal-stat"><div class="modal-stat-label">Total Hours</div><div class="modal-stat-value">—</div></div><div class="modal-stat"><div class="modal-stat-label">Avg / Day</div><div class="modal-stat-value">—</div></div>';
     return;
   }
-  const totalH=logs.reduce((s,l)=>s+(l.total_hours||0),0);
-  const avgH=totalH/logs.filter(l=>l.total_hours).length||0;
+  const totalH=logs.reduce((s,l)=>s+(calcLogHours(l)||0),0);
+  const logsWithHours=logs.filter(l=>calcLogHours(l)!==null);
+  const avgH=logsWithHours.length?totalH/logsWithHours.length:0;
   document.getElementById('modalStats').innerHTML=`
     <div class="modal-stat"><div class="modal-stat-label">Days Logged</div><div class="modal-stat-value">${logs.length}</div></div>
     <div class="modal-stat"><div class="modal-stat-label">Total Hours</div><div class="modal-stat-value" style="font-size:18px">${fmtHours(totalH)}</div></div>
@@ -249,7 +252,7 @@ async function openTimeModal(uid,name,dept){
       <td style="color:var(--blue)">${l.am_out||'—'}</td>
       <td style="color:var(--primary)">${l.pm_in||'—'}</td>
       <td style="color:var(--primary)">${l.pm_out||'—'}</td>
-      <td style="color:var(--green);font-weight:700">${fmtHours(l.total_hours)}</td>
+      <td style="color:var(--green);font-weight:700">${fmtHours(calcLogHours(l))}</td>
     </tr>`).join('')}</tbody>
   </table>`;
 }
