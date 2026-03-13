@@ -129,6 +129,60 @@ function timeAgo(ts) {
   return Math.floor(h / 24) + 'd ago';
 }
 
+// ─── Audio ───────────────────────────────────────────────
+let _audioCtx = null;
+let _audioUnlocked = false;
+let _audioBuffer = null;
+
+// Unlock audio on first user gesture (required by browsers)
+function _unlockAudio() {
+  if (_audioUnlocked) return;
+  _audioUnlocked = true;
+  try {
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Pre-load notification.mp3 if it exists
+    fetch('./notification.mp3')
+      .then(r => r.ok ? r.arrayBuffer() : Promise.reject())
+      .then(buf => _audioCtx.decodeAudioData(buf))
+      .then(decoded => { _audioBuffer = decoded; })
+      .catch(() => { /* will use synth beep */ });
+  } catch(e) {}
+}
+['click','touchstart','keydown'].forEach(ev =>
+  document.addEventListener(ev, _unlockAudio, { once: true, passive: true })
+);
+
+function _playNotifSound() {
+  try {
+    if (!_audioCtx) {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+
+    if (_audioBuffer) {
+      // Play the mp3 file
+      const src = _audioCtx.createBufferSource();
+      src.buffer = _audioBuffer;
+      src.connect(_audioCtx.destination);
+      src.start(0);
+    } else {
+      // Fallback: synthesize a soft two-tone "ding"
+      const t = _audioCtx.currentTime;
+      const osc1 = _audioCtx.createOscillator();
+      const osc2 = _audioCtx.createOscillator();
+      const gain = _audioCtx.createGain();
+      osc1.type = 'sine'; osc1.frequency.setValueAtTime(880, t);
+      osc2.type = 'sine'; osc2.frequency.setValueAtTime(1100, t + 0.1);
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.3, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      osc1.connect(gain); osc2.connect(gain); gain.connect(_audioCtx.destination);
+      osc1.start(t); osc1.stop(t + 0.15);
+      osc2.start(t + 0.1); osc2.stop(t + 0.5);
+    }
+  } catch(e) { /* audio not available */ }
+}
+
 // ─── Floating toast ─────────────────────────────────────
 window.HubNotif = {
   showMessage(senderName, text, senderId) {
@@ -137,6 +191,7 @@ window.HubNotif = {
       const uid = new URLSearchParams(window.location.search).get('uid');
       if (uid === senderId) return;
     }
+    _playNotifSound();
     const col = avatarColor(senderName);
     const el = document.createElement('a');
     el.className = 'msg-notif';

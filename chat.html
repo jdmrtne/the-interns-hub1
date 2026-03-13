@@ -247,8 +247,35 @@ async function sendMessage(){
   if(error){toast('Failed to send','err');inp.value=text;}
   inp.focus();
 }
-const msgAudio=new Audio('./notification.mp3');
-function playMsgSound(){try{msgAudio.currentTime=0;msgAudio.play().catch(()=>{});}catch(e){}}
+let _chatAudioCtx=null,_chatAudioBuf=null;
+function _initChatAudio(){
+  if(_chatAudioCtx)return;
+  try{
+    _chatAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    fetch('./notification.mp3')
+      .then(r=>r.ok?r.arrayBuffer():Promise.reject())
+      .then(b=>_chatAudioCtx.decodeAudioData(b))
+      .then(d=>{_chatAudioBuf=d;})
+      .catch(()=>{});
+  }catch(e){}
+}
+['click','touchstart','keydown'].forEach(ev=>document.addEventListener(ev,_initChatAudio,{once:true,passive:true}));
+function playMsgSound(){
+  try{
+    if(!_chatAudioCtx)_chatAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(_chatAudioCtx.state==='suspended')_chatAudioCtx.resume();
+    if(_chatAudioBuf){
+      const s=_chatAudioCtx.createBufferSource();s.buffer=_chatAudioBuf;s.connect(_chatAudioCtx.destination);s.start(0);
+    }else{
+      const t=_chatAudioCtx.currentTime,o1=_chatAudioCtx.createOscillator(),o2=_chatAudioCtx.createOscillator(),g=_chatAudioCtx.createGain();
+      o1.type='sine';o1.frequency.setValueAtTime(880,t);
+      o2.type='sine';o2.frequency.setValueAtTime(1100,t+0.1);
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.3,t+0.01);g.gain.exponentialRampToValueAtTime(0.001,t+0.5);
+      o1.connect(g);o2.connect(g);g.connect(_chatAudioCtx.destination);
+      o1.start(t);o1.stop(t+0.15);o2.start(t+0.1);o2.stop(t+0.5);
+    }
+  }catch(e){}
+}
 function setupRealtime(){
   rtChannel=sb.channel('chat-'+[currentUser.id,partnerUser.id].sort().join('-'))
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},payload=>{
