@@ -365,8 +365,7 @@ tr:hover td{background:rgba(255,255,255,.018);}
 .snav-item.admin-only { display: none; }
 .snav-footer { padding: 12px 8px 16px; border-top: 1px solid var(--border); }
 .snav-group { display: flex; flex-direction: column; }
-.snav-sub { display: none; flex-direction: column; gap: 1px; padding: 3px 0 4px 14px; margin-left: 21px; border-left: 1px solid var(--border); }
-@media(max-width:680px){ .snav-sub { display: flex; } }
+.snav-sub { display: flex; flex-direction: column; gap: 1px; padding: 3px 0 4px 14px; margin-left: 21px; border-left: 1px solid var(--border); }
 .snav-subitem { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; color: var(--text-dim); font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; background: none; border: none; width: 100%; text-align: left; transition: background .15s, color .15s; }
 .snav-subitem:hover { background: rgba(255,255,255,.05); color: var(--text-muted); }
 .snav-subitem.active { color: var(--primary); background: rgba(56,189,248,.07); }
@@ -411,6 +410,7 @@ tr:hover td{background:rgba(255,255,255,.018);}
 
 <!-- SUPABASE SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./notifications.js"></script>
 
 <!-- LOGIN SCREEN -->
 <div class="login-screen" id="loginScreen">
@@ -872,6 +872,21 @@ async function onSignedIn(user){
   renderTable(); renderCards();
   updateConnectionUI();
   if(navigator.onLine) syncPendingQueue();
+
+  // ── Announcement modal on login ──────────────────────
+  await HubAnnouncements.checkOnLogin(sb, user.id);
+
+  // ── Realtime: floating notification for new messages ─
+  sb.channel('clock-page-msgs')
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'messages',
+      filter: `receiver_id=eq.${user.id}`
+    }, async (payload) => {
+      const msg = payload.new;
+      const { data: sender } = await sb.from('users').select('name').eq('id', msg.sender_id).single();
+      HubNotif.showMessage(sender?.name || 'Someone', msg.message, msg.sender_id);
+    })
+    .subscribe();
 }
 function resetAppUI(){
   ['lAmIn','lAmOut','lPmIn','lPmOut'].forEach(id=>{

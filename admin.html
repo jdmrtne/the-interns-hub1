@@ -123,6 +123,7 @@ tr:hover td{background:rgba(255,255,255,.018);}
 .snav-item.active svg, .snav-item:hover svg { stroke: inherit; }
 </style></head><body>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./notifications.js"></script>
 <div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div class="loading-text">Loading Admin Panel…</div></div>
 <div class="toasts" id="toasts"></div>
 <div class="confirm-ov" id="confirmOv">
@@ -296,6 +297,18 @@ async function boot(){
   await Promise.all([loadLogs(),loadAnns()]);
   await loadUsers();
   document.getElementById('loadingOverlay').classList.add('hidden');
+
+  // ── Realtime: floating notification for new messages ─
+  sb.channel('admin-page-msgs')
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'messages',
+      filter: `receiver_id=eq.${currentUser.id}`
+    }, async (payload) => {
+      const msg = payload.new;
+      const { data: sender } = await sb.from('users').select('name').eq('id', msg.sender_id).single();
+      HubNotif.showMessage(sender?.name || 'Someone', msg.message, msg.sender_id);
+    })
+    .subscribe();
 }
 boot();
 </script>

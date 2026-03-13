@@ -95,6 +95,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 </head>
 <body>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./notifications.js"></script>
 <div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div class="loading-text">Loading Interns…</div></div>
 <div class="toasts" id="toasts"></div>
 <header class="mob-header"><div class="mob-brand">THE INTERN HUB</div><button class="mob-menu-btn" onclick="toggleMobileNav()">☰</button></header>
@@ -179,6 +180,21 @@ async function boot(){
   depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);});
   filterInterns();
   document.getElementById('loadingOverlay').classList.add('hidden');
+
+  // ── Announcement modal on login ──────────────────────
+  await HubAnnouncements.checkOnLogin(sb, currentUser.id);
+
+  // ── Realtime: floating notification for new messages ─
+  sb.channel('interns-page-msgs')
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'messages',
+      filter: `receiver_id=eq.${currentUser.id}`
+    }, async (payload) => {
+      const msg = payload.new;
+      const { data: sender } = await sb.from('users').select('name').eq('id', msg.sender_id).single();
+      HubNotif.showMessage(sender?.name || 'Someone', msg.message, msg.sender_id);
+    })
+    .subscribe();
 }
 boot();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
