@@ -181,7 +181,7 @@ const NAV_ICONS = {
 };
 function renderNav(active){
   const links=[
-    {href:'index.html',        icon:NAV_ICONS.clock,      label:'Clock',      key:'clock',     hideForAdmin:true},
+    {href:'index.html',        icon:NAV_ICONS.clock,      label:'Clock',      key:'clock',     internOnly:true},
     {href:'daily-logs.html',   icon:NAV_ICONS.logs,       label:'Daily Logs', key:'logs',      adminOnly:true},
     {href:'dashboard.html',    icon:NAV_ICONS.dashboard,  label:'Dashboard',  key:'dashboard'},
     {href:'interns.html',      icon:NAV_ICONS.interns,    label:'Interns',    key:'interns'},
@@ -189,7 +189,7 @@ function renderNav(active){
     {href:'announcements.html',icon:NAV_ICONS.board,      label:'Board',      key:'announcements'},
     {href:'admin.html',        icon:NAV_ICONS.admin,      label:'Admin',      key:'admin',     adminOnly:true},
   ];
-  return links.map(n=>`<a href="${n.href}" class="snav-item${active===n.key?' active':''}${n.adminOnly?' admin-only':''}" data-key="${n.key}"><span class="snav-icon">${n.icon}</span><span class="snav-label">${n.label}</span></a>`).join('');
+  return links.map(n=>`<a href="${n.href}" class="snav-item${active===n.key?' active':''}${n.adminOnly?' admin-only':''}${n.internOnly?' intern-only':''}" data-key="${n.key}"><span class="snav-icon">${n.icon}</span><span class="snav-label">${n.label}</span></a>`).join('');
 }
 function toggleMobileNav(){document.getElementById('sidebarNav').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('show');}
 async function doLogout(){await sb.auth.signOut();window.location.href='index.html';}
@@ -266,7 +266,7 @@ async function boot(){
   currentUser=session.user;
   const{data:p}=await sb.from('users').select('*').eq('id',currentUser.id).single();
   document.getElementById('navLinks').innerHTML=renderNav('interns');
-  if(p?.role==='admin'){isAdmin=true;document.querySelectorAll('.admin-only').forEach(el=>el.style.display='flex');}
+  if(p?.role==='admin'){isAdmin=true;document.querySelectorAll('.admin-only').forEach(el=>el.style.display='flex');document.querySelectorAll('.intern-only').forEach(el=>el.style.display='none');}
   const name=p?.name||currentUser.email?.split('@')[0]||'Intern';
   document.getElementById('navUserName').textContent=name;document.getElementById('navUserRole').textContent=p?.role||'intern';
   const av=document.getElementById('navAvatar');const col=avatarColor(name);av.style.background=col+'20';av.style.color=col;av.textContent=avatarInitials(name);
