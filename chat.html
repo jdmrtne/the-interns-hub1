@@ -15,9 +15,9 @@
 <style>
 :root{--bg:#0a0c0f;--surface:#111418;--panel:#161b22;--border:#21262d;--border-bright:#30363d;--primary:#38bdf8;--primary-glow:rgba(56,189,248,.15);--green:#3fb950;--red:#f85149;--red-dim:#da3633;--blue:#58a6ff;--purple:#a371f7;--text:#e6edf3;--text-muted:#7d8590;--text-dim:#484f58;--mono:"Share Tech Mono",monospace;--display:"Bebas Neue",sans-serif;--body:"DM Sans",sans-serif;--nav-w:220px;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{background:var(--bg);color:var(--text);font-family:var(--body);min-height:100vh;overflow-x:hidden;}
+html,body{background:var(--bg);color:var(--text);font-family:var(--body);height:100vh;overflow:hidden;}
 body::after{content:"";position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.02) 2px,rgba(0,0,0,.02) 4px);pointer-events:none;z-index:9999;}
-.platform-layout{display:flex;min-height:100vh;}
+.platform-layout{display:flex;height:100vh;overflow:hidden;}
 .sidebar-nav{width:var(--nav-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:300;overflow:hidden;}
 .snav-brand{padding:20px 18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;white-space:nowrap;min-height:60px;}
 .snav-brand-name{font-family:var(--display);font-size:22px;letter-spacing:.1em;color:var(--primary);line-height:1;}
@@ -35,7 +35,7 @@ body::after{content:"";position:fixed;inset:0;background:repeating-linear-gradie
 .snav-user-role{font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase;}
 .btn-logout-nav{width:100%;padding:8px;background:none;border:1px solid var(--border-bright);border-radius:6px;font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);cursor:pointer;transition:all .15s;}
 .btn-logout-nav:hover{border-color:var(--red);color:var(--red);}
-.main-content{margin-left:var(--nav-w);flex:1;min-height:100vh;display:flex;flex-direction:column;}
+.main-content{margin-left:var(--nav-w);flex:1;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
 .page-header{padding:24px 32px 20px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;gap:16px;}
 .page-title{font-family:var(--display);font-size:28px;letter-spacing:.1em;color:var(--text);line-height:1;}
 .page-subtitle{font-family:var(--mono);font-size:10px;color:var(--text-muted);letter-spacing:.12em;text-transform:uppercase;margin-top:4px;}
@@ -98,10 +98,10 @@ tr:hover td{background:rgba(255,255,255,.018);}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;}
 .stat-label{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;}
 .stat-value{font-family:var(--display);font-size:32px;letter-spacing:.05em;color:var(--primary);line-height:1;}
-@media(max-width:768px){.sidebar-nav{transform:translateX(-100%);transition:transform .25s;}.sidebar-nav.open{transform:translateX(0);}.sidebar-overlay.show{display:block;}.main-content{margin-left:0;min-height:0;flex:1;}.mob-header{display:flex;}.page-body{padding:20px 16px;}.page-header{padding:16px;}.page-title{font-size:22px;}.platform-layout{flex-direction:column;min-height:100vh;}.chat-layout{height:calc(100vh - 56px);}}
+@media(max-width:768px){.sidebar-nav{transform:translateX(-100%);transition:transform .25s;}.sidebar-nav.open{transform:translateX(0);}.sidebar-overlay.show{display:block;}.main-content{margin-left:0;height:calc(100vh - 56px);overflow:hidden;}.mob-header{display:flex;}.page-body{padding:20px 16px;}.page-header{padding:16px;}.page-title{font-size:22px;}.platform-layout{flex-direction:column;height:100vh;}.chat-layout{flex:1;height:100%;overflow:hidden;}}
 
 
-.chat-layout{display:flex;flex-direction:column;height:calc(100vh - 65px);}
+.chat-layout{display:flex;flex-direction:column;flex:1;height:100%;overflow:hidden;}
 .chat-topbar{padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;}
 .chat-back{background:none;border:1px solid var(--border-bright);border-radius:6px;color:var(--text-muted);font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;cursor:pointer;text-decoration:none;transition:all .15s;}
 .chat-back:hover{border-color:var(--primary);color:var(--primary);}
