@@ -282,36 +282,44 @@ function closeConfirm(){document.getElementById('confirmOv').classList.remove('o
 document.getElementById('confirmOkBtn').onclick=()=>{closeConfirm();if(cbFn)cbFn();};
 /* Interns */
 function filterInternTable(){const q=document.getElementById('internSearch').value.toLowerCase(),d=document.getElementById('internDeptFilter').value.toLowerCase();renderInternTable(allUsers.filter(u=>(!q||(u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q))&&(!d||(u.department||'').toLowerCase().includes(d))));}
-function renderInternTable(list){
-  const tb=document.getElementById('internTbody');
-  if(!list.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:30px;font-family:var(--mono);font-size:11px">No interns found</td></tr>';return;}
-  // Build a lookup map so onclick only needs the id (safe against apostrophes in names)
-  window._userMap={};
-  list.forEach(u=>window._userMap[u.id]=u);
-  tb.innerHTML=list.map(u=>{
-    const col=avatarColor(u.name);const isAdm=u.role==='admin';const isDisabled=u.role==='disabled';
-    const promoteBtn=!isAdm&&!isDisabled?`<button class="act-btn promote" data-action="promote" data-uid="${u.id}">↑ Admin</button>`:'';
-    const demoteBtn=isAdm?`<button class="act-btn" data-action="demote" data-uid="${u.id}">↓ Intern</button>`:'';
-    const disableBtn=!isDisabled?`<button class="act-btn danger" data-action="disable" data-uid="${u.id}" title="Disable account">✕ Disable</button>`:'';
-    const deleteBtn=`<button class="act-btn danger" data-action="delete" data-uid="${u.id}" title="Permanently delete" style="border-color:#7f1d1d;color:#f87171">🗑 Delete</button>`;
-    const pwBtn=`<button class="act-btn" data-action="resetpw" data-uid="${u.id}">🔑 PW</button>`;
-    return`<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar avatar-sm" style="background:${col}20;color:${col}">${avatarInitials(u.name)}</div><span style="font-family:var(--mono);font-size:11px;color:var(--text)">${escHtml(u.name||'—')}</span></div></td><td style="color:var(--text-muted)">${escHtml(u.email||'—')}</td><td style="color:var(--blue)">${escHtml(u.department||'—')}</td><td><span class="badge ${isAdm?'badge-admin':isDisabled?'badge-disabled':'badge-intern'}">${u.role||'intern'}</span></td><td style="color:var(--text-dim)">${fmtDate(u.created_at)}</td><td><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">${demoteBtn}${promoteBtn}${pwBtn}${disableBtn}${deleteBtn}</div></td></tr>`;
-  }).join('');
-}
-// Single delegated listener on the tbody — handles all action buttons safely
-document.addEventListener('click',function(e){
-  const btn=e.target.closest('[data-action][data-uid]');
-  if(!btn)return;
-  const id=btn.dataset.uid,u=window._userMap&&window._userMap[id];
-  if(!u)return;
-  const name=u.name||u.email||id;
-  const action=btn.dataset.action;
+// handleAction: called directly from onclick — only UUID passed, name looked up from allUsers
+function handleAction(action,id){
+  var u=null;for(var i=0;i<allUsers.length;i++){if(allUsers[i].id===id){u=allUsers[i];break;}}
+  if(!u){toast('User not found','err');return;}
+  var name=u.name||u.email||id;
   if(action==='promote')promoteUser(id,name);
   else if(action==='demote')demoteUser(id,name);
   else if(action==='disable')disableUser(id,name);
   else if(action==='delete')deleteUser(id,name);
   else if(action==='resetpw')resetPw(u.email);
-});
+}
+function renderInternTable(list){
+  var tb=document.getElementById('internTbody');
+  if(!list.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:30px;font-family:var(--mono);font-size:11px">No interns found</td></tr>';return;}
+  var rows='';
+  for(var i=0;i<list.length;i++){
+    var u=list[i];
+    var col=avatarColor(u.name);
+    var isAdm=u.role==='admin';
+    var isDisabled=u.role==='disabled';
+    var id=u.id;
+    var badge=isAdm?'badge-admin':isDisabled?'badge-disabled':'badge-intern';
+    var promoteBtn=(!isAdm&&!isDisabled)?'<button class="act-btn promote" onclick="handleAction(\'promote\',\''+id+'\')">↑ Admin</button>':'';
+    var demoteBtn=isAdm?'<button class="act-btn" onclick="handleAction(\'demote\',\''+id+'\')">↓ Intern</button>':'';
+    var disableBtn=(!isDisabled)?'<button class="act-btn danger" onclick="handleAction(\'disable\',\''+id+'\')">✕ Disable</button>':'';
+    var deleteBtn='<button class="act-btn danger" onclick="handleAction(\'delete\',\''+id+'\')" style="border-color:#7f1d1d;color:#f87171">🗑 Delete</button>';
+    var pwBtn='<button class="act-btn" onclick="handleAction(\'resetpw\',\''+id+'\')">🔑 PW</button>';
+    rows+='<tr>';
+    rows+='<td><div style="display:flex;align-items:center;gap:8px"><div class="avatar avatar-sm" style="background:'+col+'20;color:'+col+'">'+avatarInitials(u.name)+'</div><span style="font-family:var(--mono);font-size:11px;color:var(--text)">'+escHtml(u.name||'—')+'</span></div></td>';
+    rows+='<td style="color:var(--text-muted)">'+escHtml(u.email||'—')+'</td>';
+    rows+='<td style="color:var(--blue)">'+escHtml(u.department||'—')+'</td>';
+    rows+='<td><span class="badge '+badge+'">'+(u.role||'intern')+'</span></td>';
+    rows+='<td style="color:var(--text-dim)">'+fmtDate(u.created_at)+'</td>';
+    rows+='<td><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">'+demoteBtn+promoteBtn+pwBtn+disableBtn+deleteBtn+'</div></td>';
+    rows+='</tr>';
+  }
+  tb.innerHTML=rows;
+}
 async function promoteUser(id,name){showConfirm('Promote to Admin','Promote '+name+' to admin?',async()=>{const{error}=await sb.from('users').update({role:'admin'}).eq('id',id);if(error){toast('Failed: '+error.message+' — Run the admin RLS SQL fix in Supabase','err');return;}toast(name+' promoted','ok');await loadUsers();});}
 async function demoteUser(id,name){showConfirm('Demote User','Demote '+name+' back to intern?',async()=>{const{error}=await sb.from('users').update({role:'intern'}).eq('id',id);if(error){toast('Failed: '+error.message,'err');return;}toast(name+' demoted','ok');await loadUsers();});}
 async function resetPw(email){showConfirm('Reset Password','Send password reset to '+email+'?',async()=>{const{error}=await sb.auth.resetPasswordForEmail(email);if(error){toast('Failed: '+error.message,'err');return;}toast('Reset email sent','ok');});}
