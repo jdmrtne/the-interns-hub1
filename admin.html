@@ -4,7 +4,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#0a0c0f">
 <link rel="manifest" href="./manifest.json"><link rel="icon" href="./favicon.ico"><link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<title>Admin — The Intern Hub</title>
+<title>Admin — The Interns Hub</title>
 <style>
 :root{--bg:#0a0c0f;--surface:#111418;--panel:#161b22;--border:#21262d;--border-bright:#30363d;--primary:#38bdf8;--primary-glow:rgba(56,189,248,.15);--green:#3fb950;--red:#f85149;--red-dim:#da3633;--blue:#58a6ff;--purple:#a371f7;--text:#e6edf3;--text-muted:#7d8590;--text-dim:#484f58;--mono:"Share Tech Mono",monospace;--display:"Bebas Neue",sans-serif;--body:"DM Sans",sans-serif;--nav-w:220px;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -165,10 +165,10 @@ tr:hover td{background:rgba(255,255,255,.018);}
   </div>
 </div>
 <div class="platform-layout">
-<header class="mob-header"><div class="mob-brand">THE INTERN HUB</div><button class="mob-menu-btn" onclick="toggleMobileNav()">☰</button></header>
+<header class="mob-header"><div class="mob-brand">THE INTERNS HUB</div><button class="mob-menu-btn" onclick="toggleMobileNav()">☰</button></header>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileNav()"></div>
 <nav class="sidebar-nav" id="sidebarNav">
-  <div class="snav-brand"><span class="snav-brand-icon">◆</span><div><div class="snav-brand-name">THE INTERN HUB</div><div class="snav-brand-sub">Intern Portal</div></div></div>
+  <div class="snav-brand"><span class="snav-brand-icon">◆</span><div><div class="snav-brand-name">THE INTERNS HUB</div><div class="snav-brand-sub">Intern Portal</div></div></div>
   <div class="snav-links" id="navLinks"></div>
   <div class="snav-footer">
     <div class="snav-user"><div class="snav-user-avatar" id="navAvatar"></div><div style="overflow:hidden"><div class="snav-user-name" id="navUserName">Loading…</div><div class="snav-user-role" id="navUserRole">intern</div></div></div>
@@ -273,7 +273,7 @@ function renderNav(active){
 }
 function toggleMobileNav(){document.getElementById('sidebarNav').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('show');}
 async function doLogout(){await sb.auth.signOut();window.location.href='index.html';}
-function setupUser(p,active){document.getElementById('navLinks').innerHTML=renderNav(active);const name=p?.name||currentUser.email?.split('@')[0]||'Intern';document.getElementById('navUserName').textContent=name;document.getElementById('navUserRole').textContent=p?.role||'intern';const av=document.getElementById('navAvatar');const col=avatarColor(name);av.style.background=col+'20';av.style.color=col;av.textContent=avatarInitials(name);if(p?.role==='admin')document.querySelectorAll('.admin-only').forEach(el=>el.style.display='flex');}
+function setupUser(p,active){document.getElementById('navLinks').innerHTML=renderNav(active);const name=p?.name||currentUser.email?.split('@')[0]||'Intern';document.getElementById('navUserName').textContent=name;document.getElementById('navUserRole').textContent=p?.role||'intern';const av=document.getElementById('navAvatar');const col=avatarColor(name);av.style.background=col+'20';av.style.color=col;av.textContent=avatarInitials(name);if(p?.role==='admin'){document.querySelectorAll('.admin-only').forEach(el=>el.style.display='flex');document.querySelectorAll('.intern-only').forEach(el=>el.style.display='none');}}
 let allUsers=[],allLogs=[],allAnns=[],cbFn=null;
 function switchTab(name,btn){document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.admin-tab').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+name).classList.add('active');if(btn)btn.classList.add('active');if(name==='announcements')renderAdminAnns();}
 function showConfirm(title,msg,cb){document.getElementById('confirmTitle').textContent=title;document.getElementById('confirmMsg').textContent=msg;cbFn=cb;document.getElementById('confirmOv').classList.add('open');}

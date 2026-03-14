@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0a0c0f">
 <link rel="manifest" href="./manifest.json"><link rel="icon" href="./favicon.ico"><link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<title>Interns — The Intern Hub</title>
+<title>Interns — The Interns Hub</title>
 <style>
 :root{--bg:#0a0c0f;--surface:#111418;--panel:#161b22;--border:#21262d;--border-bright:#30363d;--primary:#38bdf8;--primary-glow:rgba(56,189,248,.15);--green:#3fb950;--red:#f85149;--red-dim:#da3633;--blue:#58a6ff;--purple:#a371f7;--text:#e6edf3;--text-muted:#7d8590;--text-dim:#484f58;--mono:'Share Tech Mono',monospace;--display:'Bebas Neue',sans-serif;--body:'DM Sans',sans-serif;--nav-w:220px;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -122,11 +122,11 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 <script src="./notifications.js"></script>
 <div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div class="loading-text">Loading Interns…</div></div>
 <div class="toasts" id="toasts"></div>
-<header class="mob-header"><div class="mob-brand">THE INTERN HUB</div><button class="mob-menu-btn" onclick="toggleMobileNav()">☰</button></header>
+<header class="mob-header"><div class="mob-brand">THE INTERNS HUB</div><button class="mob-menu-btn" onclick="toggleMobileNav()">☰</button></header>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileNav()"></div>
 <div class="platform-layout">
   <nav class="sidebar-nav" id="sidebarNav">
-    <div class="snav-brand"><span class="snav-brand-icon">◆</span><div><div class="snav-brand-name">THE INTERN HUB</div><div class="snav-brand-sub">Intern Portal</div></div></div>
+    <div class="snav-brand"><span class="snav-brand-icon">◆</span><div><div class="snav-brand-name">THE INTERNS HUB</div><div class="snav-brand-sub">Intern Portal</div></div></div>
     <div class="snav-links" id="navLinks"></div>
     <div class="snav-footer">
       <div class="snav-user"><div class="snav-user-avatar" id="navAvatar"></div><div style="overflow:hidden"><div class="snav-user-name" id="navUserName">Loading…</div><div class="snav-user-role" id="navUserRole">intern</div></div></div>
@@ -181,7 +181,7 @@ const NAV_ICONS = {
 };
 function renderNav(active){
   const links=[
-    {href:'index.html',        icon:NAV_ICONS.clock,      label:'Clock',      key:'clock',     hideForAdmin:true},
+    {href:'index.html',        icon:NAV_ICONS.clock,      label:'Clock',      key:'clock',     internOnly:true},
     {href:'daily-logs.html',   icon:NAV_ICONS.logs,       label:'Daily Logs', key:'logs',      adminOnly:true},
     {href:'dashboard.html',    icon:NAV_ICONS.dashboard,  label:'Dashboard',  key:'dashboard'},
     {href:'interns.html',      icon:NAV_ICONS.interns,    label:'Interns',    key:'interns'},
@@ -189,7 +189,7 @@ function renderNav(active){
     {href:'announcements.html',icon:NAV_ICONS.board,      label:'Board',      key:'announcements'},
     {href:'admin.html',        icon:NAV_ICONS.admin,      label:'Admin',      key:'admin',     adminOnly:true},
   ];
-  return links.map(n=>`<a href="${n.href}" class="snav-item${active===n.key?' active':''}${n.adminOnly?' admin-only':''}" data-key="${n.key}"><span class="snav-icon">${n.icon}</span><span class="snav-label">${n.label}</span></a>`).join('');
+  return links.map(n=>`<a href="${n.href}" class="snav-item${active===n.key?' active':''}${n.adminOnly?' admin-only':''}${n.internOnly?' intern-only':''}" data-key="${n.key}"><span class="snav-icon">${n.icon}</span><span class="snav-label">${n.label}</span></a>`).join('');
 }
 function toggleMobileNav(){document.getElementById('sidebarNav').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('show');}
 async function doLogout(){await sb.auth.signOut();window.location.href='index.html';}
@@ -266,7 +266,7 @@ async function boot(){
   currentUser=session.user;
   const{data:p}=await sb.from('users').select('*').eq('id',currentUser.id).single();
   document.getElementById('navLinks').innerHTML=renderNav('interns');
-  if(p?.role==='admin'){isAdmin=true;document.querySelectorAll('.admin-only').forEach(el=>el.style.display='flex');}
+  if(p?.role==='admin'){isAdmin=true;document.querySelectorAll('.admin-only').forEach(el=>el.style.display='flex');document.querySelectorAll('.intern-only').forEach(el=>el.style.display='none');}
   const name=p?.name||currentUser.email?.split('@')[0]||'Intern';
   document.getElementById('navUserName').textContent=name;document.getElementById('navUserRole').textContent=p?.role||'intern';
   const av=document.getElementById('navAvatar');const col=avatarColor(name);av.style.background=col+'20';av.style.color=col;av.textContent=avatarInitials(name);
