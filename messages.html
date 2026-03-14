@@ -241,7 +241,6 @@ async function boot(){
   if(!session){window.location.href='index.html';return;}
   currentUser=session.user;
   const{data:p}=await sb.from('users').select('*').eq('id',currentUser.id).single();
-  document.getElementById('navLinks').innerHTML=renderNav('messages');
   setupUser(p);
   const{data:users}=await sb.from('users').select('*').neq('id',currentUser.id).order('name');
   allUsers=users||[];
@@ -254,7 +253,7 @@ async function boot(){
   // ── Poll for new messages every 10s ─────────────────
   HubMsgPoller.start(sb, currentUser.id);
 }
-function setupUser(p){const name=p?.name||currentUser.email?.split('@')[0]||'Intern';document.getElementById('navUserName').textContent=name;document.getElementById('navUserRole').textContent=p?.role||'intern';const av=document.getElementById('navAvatar');const col=avatarColor(name);av.style.background=col+'20';av.style.color=col;av.textContent=avatarInitials(name);if(p?.role==='admin')document.querySelectorAll('.admin-only').forEach(el=>el.style.display='flex');}
+
 boot();
 </script>
 
