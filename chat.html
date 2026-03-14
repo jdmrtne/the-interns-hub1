@@ -117,10 +117,11 @@ tr:hover td{background:rgba(255,255,255,.018);}
 @keyframes bIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .msg-bubble.mine{align-self:flex-end;flex-direction:row-reverse;}
 .msg-bubble.theirs{align-self:flex-start;}
-.btn-del-msg{background:none;border:none;color:var(--text-dim);font-size:12px;cursor:pointer;padding:2px 4px;opacity:.45;transition:opacity .15s,color .15s;flex-shrink:0;align-self:flex-start;margin-top:6px;line-height:1;}
+.btn-del-msg{background:none;border:none;color:var(--text-dim);cursor:pointer;padding:2px 3px;opacity:.4;transition:opacity .15s,color .15s;flex-shrink:0;display:flex;align-items:center;line-height:1;}
 .btn-del-msg:hover{opacity:1;color:#f87171;}
 .msg-bubble.deleting{opacity:.4;pointer-events:none;transition:opacity .2s;}
-.bubble-deleted{font-style:italic;color:var(--text-dim);font-size:13px;}
+.bubble-content--deleted{background:none !important;border-color:var(--border) !important;border-style:dashed !important;}
+.bubble-deleted{font-style:italic;color:var(--text-dim);font-size:12px;}
 .bubble-content{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-family:var(--body);font-size:14px;line-height:1.5;color:var(--text);word-break:break-word;}
 .msg-bubble.mine .bubble-content{background:rgba(56,189,248,.12);border-color:rgba(56,189,248,.25);border-radius:12px 4px 12px 12px;}
 .msg-bubble.theirs .bubble-content{border-radius:4px 12px 12px 12px;}
@@ -239,22 +240,26 @@ function renderMsg(msg,append=true){
   const el=document.createElement('div');el.className='msg-bubble '+(isMine?'mine':'theirs');
   el.dataset.msgId=msg.id;
   const canDelete=isMine||currentUserIsAdmin;
-  const delBtn=canDelete?`<button class="btn-del-msg" title="Delete message" onclick="deleteMsg('${msg.id}',this)">🗑</button>`:'';
-  el.innerHTML=`<div><div class="bubble-content">${escHtml(msg.message)}</div><div class="bubble-time">${time}${delBtn}</div></div>`;
+  const trashIcon=`<svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+  const delBtn=canDelete?`<button class="btn-del-msg" title="Delete message" onclick="deleteMsg('${msg.id}',this)">${trashIcon}</button>`:'';
+  if(msg.is_deleted){
+    el.innerHTML=`<div><div class="bubble-content bubble-content--deleted"><span class="bubble-deleted">Message deleted</span></div></div>`;
+  } else {
+    el.innerHTML=`<div><div class="bubble-content">${escHtml(msg.message)}</div><div class="bubble-time">${time}${delBtn}</div></div>`;
+  }
   if(append){area.appendChild(el);scrollBottom();}else area.prepend(el);
 }
 async function deleteMsg(id,btn){
   if(!confirm('Delete this message?'))return;
   const bubble=btn.closest('.msg-bubble');
   bubble.classList.add('deleting');
-  const{error}=await sb.from('messages').delete().eq('id',id);
+  const{error}=await sb.from('messages').update({is_deleted:true,message:''}).eq('id',id);
   if(error){toast('Failed to delete','err');bubble.classList.remove('deleting');return;}
   const content=bubble.querySelector('.bubble-content');
-  const time=bubble.querySelector('.bubble-time');
-  content.innerHTML='<span class="bubble-deleted">🚫 Message deleted</span>';
-  content.style.background='none';
-  content.style.borderColor='var(--border)';
-  if(time)time.remove();
+  const timeEl=bubble.querySelector('.bubble-time');
+  content.className='bubble-content bubble-content--deleted';
+  content.innerHTML='<span class="bubble-deleted">Message deleted</span>';
+  if(timeEl)timeEl.remove();
   bubble.classList.remove('deleting');
 }
 async function loadMessages(){
