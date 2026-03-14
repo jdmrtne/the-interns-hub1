@@ -282,9 +282,10 @@ function closeConfirm(){document.getElementById('confirmOv').classList.remove('o
 document.getElementById('confirmOkBtn').onclick=()=>{closeConfirm();if(cbFn)cbFn();};
 /* Interns */
 function filterInternTable(){const q=document.getElementById('internSearch').value.toLowerCase(),d=document.getElementById('internDeptFilter').value.toLowerCase();renderInternTable(allUsers.filter(u=>(!q||(u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q))&&(!d||(u.department||'').toLowerCase().includes(d))));}
-// handleAction: called directly from onclick — only UUID passed, name looked up from allUsers
+// handleAction: called from onclick with just the UUID - name looked up safely from allUsers
 function handleAction(action,id){
-  var u=null;for(var i=0;i<allUsers.length;i++){if(allUsers[i].id===id){u=allUsers[i];break;}}
+  var u=null;
+  for(var i=0;i<allUsers.length;i++){if(allUsers[i].id===id){u=allUsers[i];break;}}
   if(!u){toast('User not found','err');return;}
   var name=u.name||u.email||id;
   if(action==='promote')promoteUser(id,name);
@@ -296,29 +297,27 @@ function handleAction(action,id){
 function renderInternTable(list){
   var tb=document.getElementById('internTbody');
   if(!list.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:30px;font-family:var(--mono);font-size:11px">No interns found</td></tr>';return;}
-  var rows='';
-  for(var i=0;i<list.length;i++){
-    var u=list[i];
+  tb.innerHTML=list.map(function(u){
     var col=avatarColor(u.name);
     var isAdm=u.role==='admin';
     var isDisabled=u.role==='disabled';
     var id=u.id;
     var badge=isAdm?'badge-admin':isDisabled?'badge-disabled':'badge-intern';
-    var promoteBtn=(!isAdm&&!isDisabled)?'<button class="act-btn promote" onclick="handleAction(\'promote\',\''+id+'\')">↑ Admin</button>':'';
-    var demoteBtn=isAdm?'<button class="act-btn" onclick="handleAction(\'demote\',\''+id+'\')">↓ Intern</button>':'';
-    var disableBtn=(!isDisabled)?'<button class="act-btn danger" onclick="handleAction(\'disable\',\''+id+'\')">✕ Disable</button>':'';
-    var deleteBtn='<button class="act-btn danger" onclick="handleAction(\'delete\',\''+id+'\')" style="border-color:#7f1d1d;color:#f87171">🗑 Delete</button>';
-    var pwBtn='<button class="act-btn" onclick="handleAction(\'resetpw\',\''+id+'\')">🔑 PW</button>';
-    rows+='<tr>';
-    rows+='<td><div style="display:flex;align-items:center;gap:8px"><div class="avatar avatar-sm" style="background:'+col+'20;color:'+col+'">'+avatarInitials(u.name)+'</div><span style="font-family:var(--mono);font-size:11px;color:var(--text)">'+escHtml(u.name||'—')+'</span></div></td>';
-    rows+='<td style="color:var(--text-muted)">'+escHtml(u.email||'—')+'</td>';
-    rows+='<td style="color:var(--blue)">'+escHtml(u.department||'—')+'</td>';
-    rows+='<td><span class="badge '+badge+'">'+(u.role||'intern')+'</span></td>';
-    rows+='<td style="color:var(--text-dim)">'+fmtDate(u.created_at)+'</td>';
-    rows+='<td><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">'+demoteBtn+promoteBtn+pwBtn+disableBtn+deleteBtn+'</div></td>';
-    rows+='</tr>';
-  }
-  tb.innerHTML=rows;
+    var promoteBtn=(!isAdm&&!isDisabled)?'<button class="act-btn promote" onclick="handleAction(&quot;promote&quot;,&quot;'+id+'&quot;)">&#8593; Admin</button>':'';
+    var demoteBtn=isAdm?'<button class="act-btn" onclick="handleAction(&quot;demote&quot;,&quot;'+id+'&quot;)">&#8595; Intern</button>':'';
+    var disableBtn=(!isDisabled)?'<button class="act-btn danger" onclick="handleAction(&quot;disable&quot;,&quot;'+id+'&quot;)">&#10005; Disable</button>':'';
+    var deleteBtn='<button class="act-btn danger" onclick="handleAction(&quot;delete&quot;,&quot;'+id+'&quot;)" style="border-color:#7f1d1d;color:#f87171">&#128465; Delete</button>';
+    var pwBtn='<button class="act-btn" onclick="handleAction(&quot;resetpw&quot;,&quot;'+id+'&quot;)">&#128273; PW</button>';
+    var html='<tr>';
+    html+='<td><div style="display:flex;align-items:center;gap:8px"><div class="avatar avatar-sm" style="background:'+col+'20;color:'+col+'">'+avatarInitials(u.name)+'</div><span style="font-family:var(--mono);font-size:11px;color:var(--text)">'+escHtml(u.name||'\u2014')+'</span></div></td>';
+    html+='<td style="color:var(--text-muted)">'+escHtml(u.email||'\u2014')+'</td>';
+    html+='<td style="color:var(--blue)">'+escHtml(u.department||'\u2014')+'</td>';
+    html+='<td><span class="badge '+badge+'">'+(u.role||'intern')+'</span></td>';
+    html+='<td style="color:var(--text-dim)">'+fmtDate(u.created_at)+'</td>';
+    html+='<td><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">'+demoteBtn+promoteBtn+pwBtn+disableBtn+deleteBtn+'</div></td>';
+    html+='</tr>';
+    return html;
+  }).join('');
 }
 async function promoteUser(id,name){showConfirm('Promote to Admin','Promote '+name+' to admin?',async()=>{const{error}=await sb.from('users').update({role:'admin'}).eq('id',id);if(error){toast('Failed: '+error.message+' — Run the admin RLS SQL fix in Supabase','err');return;}toast(name+' promoted','ok');await loadUsers();});}
 async function demoteUser(id,name){showConfirm('Demote User','Demote '+name+' back to intern?',async()=>{const{error}=await sb.from('users').update({role:'intern'}).eq('id',id);if(error){toast('Failed: '+error.message,'err');return;}toast(name+' demoted','ok');await loadUsers();});}
