@@ -194,14 +194,14 @@ const NAV_ICONS={
 };
 function renderNav(active){
   const links=[
-    {href:'daily-logs.html', icon:NAV_ICONS.logs,      label:'Daily Logs', key:'logs',     adminOnly:true},
-    {href:'dashboard.html',  icon:NAV_ICONS.dashboard,  label:'Dashboard',  key:'dashboard'},
-    {href:'interns.html',    icon:NAV_ICONS.interns,    label:'Interns',    key:'interns'},
-    {href:'messages.html',   icon:NAV_ICONS.messages,   label:'Messages',   key:'messages'},
-    {href:'announcements.html',icon:NAV_ICONS.board,    label:'Board',      key:'announcements'},
-    {href:'admin.html',      icon:NAV_ICONS.admin,      label:'Admin',      key:'admin',    adminOnly:true},
+    {href:'daily-logs.html',   icon:NAV_ICONS.logs,      label:'Daily Logs', key:'logs'},
+    {href:'dashboard.html',    icon:NAV_ICONS.dashboard,  label:'Dashboard',  key:'dashboard'},
+    {href:'interns.html',      icon:NAV_ICONS.interns,    label:'Interns',    key:'interns'},
+    {href:'messages.html',     icon:NAV_ICONS.messages,   label:'Messages',   key:'messages'},
+    {href:'announcements.html',icon:NAV_ICONS.board,      label:'Board',      key:'announcements'},
+    {href:'admin.html',        icon:NAV_ICONS.admin,      label:'Admin',      key:'admin'},
   ];
-  return links.map(n=>`<a href="${n.href}" class="snav-item${active===n.key?' active':''}${n.adminOnly?' admin-only':''}" data-key="${n.key}"><span class="snav-icon">${n.icon}</span><span class="snav-label">${n.label}</span></a>`).join('');
+  return links.map(n=>`<a href="${n.href}" class="snav-item${active===n.key?' active':''}" data-key="${n.key}"><span class="snav-icon">${n.icon}</span><span class="snav-label">${n.label}</span></a>`).join('');
 }
 function toggleMobileNav(){document.getElementById('sidebarNav').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('show');}
 async function doLogout(){await sb.auth.signOut();window.location.href='index.html';}
